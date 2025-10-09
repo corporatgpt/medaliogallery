@@ -1,151 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-  <title>Gallery AR — 3 Targets</title>
-
-  <!-- A-Frame & MindAR -->
-  <script src="https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebAR Gallery — 3 Targets</title>
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
-    html, body { margin:0; height:100%; background:#000; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
-    .hud { position:fixed; left:0; right:0; top:0; padding: env(safe-area-inset-top) 16px 8px; display:flex; justify-content:space-between; align-items:center; color:#fff; z-index:10; pointer-events:none; }
-    .pill { pointer-events:auto; background: rgba(20,20,20,.6); border:1px solid rgba(255,255,255,.15); padding:8px 12px; border-radius:999px; font-size:13px; }
-    .controls { display:flex; gap:8px; }
-    .btn { pointer-events:auto; background: rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22); padding:8px 10px; border-radius:10px; font-size:13px; color:#fff; }
-    .footer { position:fixed; left:0; right:0; bottom:0; padding:8px 16px env(safe-area-inset-bottom); color:#fff; display:flex; justify-content:center; z-index:10; pointer-events:none; }
-    .footer .pill { font-size:12px; opacity:.85; }
-    video::-webkit-media-controls { display:none !important; }
+    body { margin:0; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+    #loading {
+      position:fixed; inset:0; background:#000; color:#fff;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:9999;
+    }
+    #loading.hidden { display:none; }
+    .spinner { width:50px; height:50px; border:4px solid rgba(255,255,255,.3);
+               border-top-color:#fff; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:20px; }
+    @keyframes spin { to { transform:rotate(360deg);} }
+    #controls {
+      position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+      z-index:1000; display:flex; gap:10px; background:rgba(0,0,0,.7);
+      padding:15px; border-radius:12px; backdrop-filter:blur(10px);
+    }
+    button {
+      padding:12px 24px; font-size:16px; border:none; border-radius:8px;
+      cursor:pointer; font-weight:600; transition:all .2s;
+    }
+    #muteBtn{background:#3b82f6;color:#fff;} #resetBtn{background:#ef4444;color:#fff;}
+    #muteBtn:hover{background:#2563eb;} #resetBtn:hover{background:#dc2626;}
+    video::-webkit-media-controls{display:none!important;}
   </style>
 </head>
 <body>
-  <!-- HUD -->
-  <div class="hud">
-    <div class="pill">Aim at the artwork until it locks</div>
-    <div class="controls">
-      <button class="btn" id="toggleMute">🔇 Unmute</button>
-      <button class="btn" id="resetBtn">↻ Reset</button>
-    </div>
+  <div id="loading">
+    <div class="spinner"></div>
+    <div id="status">Initializing AR Experience...</div>
   </div>
-  <div class="footer"><div class="pill">Tip: Move closer. Avoid reflections.</div></div>
 
-  <!-- Scene -->
   <a-scene
-    mindar-image="imageTargetSrc: ./assets/targets.mind; filterMinCF:0.0001; filterBeta:10; warmupTolerance:5;"
-    embedded
+    mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1; filterMinCF: 0.0001; filterBeta: 0.001;"
     color-space="sRGB"
-    renderer="colorManagement:true, physicallyCorrectLights:true, precision:mediump"
+    renderer="colorManagement:true, physicallyCorrectLights"
     vr-mode-ui="enabled:false"
     device-orientation-permission-ui="enabled:true">
 
-    <a-assets timeout="60000">
-      <!-- Posters -->
-      <img id="poster1" src="./assets/poster-1.jpg" crossorigin="anonymous" />
-      <img id="poster2" src="./assets/poster-2.jpg" crossorigin="anonymous" />
-      <img id="poster3" src="./assets/poster-3.jpg" crossorigin="anonymous" />
-      <!-- Videos (start muted; user can unmute) -->
-      <video id="vid1" src="./assets/video-1.mp4" playsinline webkit-playsinline muted preload="auto" loop crossorigin="anonymous"></video>
-      <video id="vid2" src="./assets/video-2.mp4" playsinline webkit-playsinline muted preload="auto" loop crossorigin="anonymous"></video>
-      <video id="vid3" src="./assets/video-3.mp4" playsinline webkit-playsinline muted preload="auto" loop crossorigin="anonymous"></video>
+    <a-assets>
+      <video id="vid1" src="./video-1.mp4" preload="auto" playsinline webkit-playsinline crossorigin="anonymous"></video>
+      <video id="vid2" src="./video-2.mp4" preload="auto" playsinline webkit-playsinline crossorigin="anonymous"></video>
+      <video id="vid3" src="./video-3.mp4" preload="auto" playsinline webkit-playsinline crossorigin="anonymous"></video>
     </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
 
-    <!-- TARGET 0 -->
-    <a-entity mindar-image-target="targetIndex: 0">
-      <a-plane id="plane1" width="1" height="1" material="src: #poster1;"></a-plane>
-      <a-video id="videoPlane1" src="#vid1" width="1" height="1" autoplay="false" loop="true" muted="true" visible="false" material="shader: flat; side: double;"></a-video>
+    <!-- Target 0 -->
+    <a-entity mindar-image-target="targetIndex:0">
+      <a-video id="videoPlane1" src="#vid1" width="1" height="1" material="shader:flat;transparent:true;"></a-video>
     </a-entity>
 
-    <!-- TARGET 1 -->
-    <a-entity mindar-image-target="targetIndex: 1">
-      <a-plane id="plane2" width="1" height="1" material="src: #poster2;"></a-plane>
-      <a-video id="videoPlane2" src="#vid2" width="1" height="1" autoplay="false" loop="true" muted="true" visible="false" material="shader: flat; side: double;"></a-video>
+    <!-- Target 1 -->
+    <a-entity mindar-image-target="targetIndex:1">
+      <a-video id="videoPlane2" src="#vid2" width="1" height="1" material="shader:flat;transparent:true;"></a-video>
     </a-entity>
 
-    <!-- TARGET 2 -->
-    <a-entity mindar-image-target="targetIndex: 2">
-      <a-plane id="plane3" width="1" height="1" material="src: #poster3;"></a-plane>
-      <a-video id="videoPlane3" src="#vid3" width="1" height="1" autoplay="false" loop="true" muted="true" visible="false" material="shader: flat; side: double;"></a-video>
+    <!-- Target 2 -->
+    <a-entity mindar-image-target="targetIndex:2">
+      <a-video id="videoPlane3" src="#vid3" width="1" height="1" material="shader:flat;transparent:true;"></a-video>
     </a-entity>
   </a-scene>
 
+  <div id="controls">
+    <button id="muteBtn">Mute</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+
   <script>
-    // Elements
+    console.log('[v1] AR 3-target version loaded');
+
     const sceneEl = document.querySelector('a-scene');
-    const toggleMuteBtn = document.getElementById('toggleMute');
+    const videos = [
+      document.getElementById('vid1'),
+      document.getElementById('vid2'),
+      document.getElementById('vid3')
+    ];
+    const muteBtn = document.getElementById('muteBtn');
     const resetBtn = document.getElementById('resetBtn');
+    const loading = document.getElementById('loading');
+    const status = document.getElementById('status');
 
-    const vids = [ 'vid1','vid2','vid3' ].map(id => document.getElementById(id));
-    const planesVideo = [ 'videoPlane1','videoPlane2','videoPlane3' ].map(id => document.getElementById(id));
-    const planesPoster = [ 'plane1','plane2','plane3' ].map(id => document.getElementById(id));
+    let isMuted = false;
+    let arReady = false;
 
-    let active = null; // 0 | 1 | 2 | null
-    let muted = true;
+    function updateStatus(msg){ status.textContent = msg; console.log('[v1]', msg); }
 
-    // Auto-fit plane height to each video's real aspect ratio (width is 1 unit)
-    vids.forEach((v, i) => {
-      v.addEventListener('loadedmetadata', () => {
-        const w = v.videoWidth, h = v.videoHeight;
-        if (w && h) {
-          const width = 1;
-          const height = width * (h / w);
-          planesVideo[i].setAttribute('width', width);
-          planesVideo[i].setAttribute('height', height);
-          planesPoster[i].setAttribute('width', width);
-          planesPoster[i].setAttribute('height', height);
-        }
+    sceneEl.addEventListener('loaded', ()=> updateStatus('Loading AR tracking...'));
+    sceneEl.addEventListener('arReady', ()=>{
+      arReady = true;
+      loading.classList.add('hidden');
+      updateStatus('AR Ready! Point at any artwork.');
+    });
+    sceneEl.addEventListener('arError', e=>{
+      updateStatus('AR Error: ' + e.detail.error);
+    });
+
+    // Auto-fit each video to its real aspect
+    videos.forEach((v,i)=>{
+      v.addEventListener('loadedmetadata', ()=>{
+        const w=v.videoWidth,h=v.videoHeight;
+        const height=1*(h/w);
+        document.getElementById('videoPlane'+(i+1)).setAttribute('height',height);
       });
     });
 
-    function stopAll(){
-      vids.forEach(v => { try { v.pause(); v.currentTime = 0; } catch(e){} });
-      planesVideo.forEach(p => p.setAttribute('visible','false'));
-      planesPoster.forEach(p => p.setAttribute('visible','true'));
-      active = null;
-    }
-
-    function playVideo(i){
-      stopAll();
-      planesPoster[i].setAttribute('visible','false');
-      planesVideo[i].setAttribute('visible','true');
-      vids[i].muted = muted;
-      const playPromise = vids[i].play();
-      if (playPromise) playPromise.catch(()=>{ /* autoplay may need a tap first */ });
-      active = i;
-      toggleMuteBtn.textContent = muted ? '🔇 Unmute' : '🔊 Mute';
-    }
-
-    sceneEl.addEventListener('targetFound', (e)=>{
-      const idx = (e.detail && e.detail.targetIndex);
-      if (idx === 0 || idx === 1 || idx === 2) playVideo(idx);
+    // Target events
+    sceneEl.querySelectorAll('[mindar-image-target]').forEach((t,i)=>{
+      t.addEventListener('targetFound',()=>{
+        updateStatus('Target '+i+' found');
+        videos.forEach(v=>v.pause());
+        videos[i].muted=isMuted;
+        videos[i].play().catch(err=>console.warn('Autoplay blocked',err));
+      });
+      t.addEventListener('targetLost',()=>videos[i].pause());
     });
 
-    sceneEl.addEventListener('targetLost', ()=>{
-      if (active !== null) {
-        vids[active].pause();
-        planesVideo[active].setAttribute('visible','false');
-        planesPoster[active].setAttribute('visible','true');
-      }
+    muteBtn.addEventListener('click',()=>{
+      isMuted=!isMuted;
+      videos.forEach(v=>v.muted=isMuted);
+      muteBtn.textContent=isMuted?'Unmute':'Mute';
     });
 
-    toggleMuteBtn.addEventListener('click', ()=>{
-      muted = !muted;
-      vids.forEach(v => v.muted = muted);
-      toggleMuteBtn.textContent = muted ? '🔇 Unmute' : '🔊 Mute';
-      if (active !== null) vids[active].play().catch(()=>{});
+    resetBtn.addEventListener('click',()=>{
+      videos.forEach(v=>{v.pause();v.currentTime=0;});
+      updateStatus('Reset all videos.');
     });
 
-    resetBtn.addEventListener('click', stopAll);
-
-    // iOS: prime playback after first touch
-    window.addEventListener('touchend', ()=>{
-      if (active === null) {
-        vids.forEach(v => v.play().then(()=>v.pause()).catch(()=>{}));
-      }
-    }, { once:true });
+    setTimeout(()=>{
+      if(!arReady) updateStatus('AR init timeout. Check targets.mind.');
+    },20000);
   </script>
 </body>
 </html>
